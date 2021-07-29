@@ -1,0 +1,25 @@
+{
+  "name": "team51-validator",
+  "version": "1.0.0",
+  "description": "A Team 51 HTML Validator tool",
+  "main": "bin/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "bin": {
+    "t51check": "./bin/index.js"
+  },
+  "keywords": [
+    "automattic",
+    "team51",
+    "w3c"
+  ],
+  "author": "WordPress.com Special Projects",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^0.21.1",
+    "dotenv": "^10.0.0",
+    "wpcom": "^5.4.2",
+    "yargs": "^17.0.1"
+  }
+}
