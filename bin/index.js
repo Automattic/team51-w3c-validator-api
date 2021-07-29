@@ -28,26 +28,31 @@ const w3cURL = `https://validator.w3.org/nu/?doc=${ siteURL }&out=json`;
 
     // Process data to create a summary object
     const summary = [];
-    data.messages.forEach( i => {
-        if ( !summary[ i.type ] ) {
-            summary[ i.type ] = { count: 0, messages: {} };
+    data.messages.forEach( msg => {
+        // Type could be 'info' or 'error'
+        if ( !summary[ msg.type ] ) {
+            summary[ msg.type ] = { type_count: 0, messages: {} };
         }
 
-        summary[ i.type ].count++;
+        summary[ msg.type ].type_count++;
 
-        if ( !summary[ i.type ].messages[ i.message ] ) {
-            summary[ i.type ].messages[ i.message ] = 0;
+        // Cumulative for this specific message
+        if ( !summary[ msg.type ].messages[ msg.message ] ) {
+            summary[ msg.type ].messages[ msg.message ] = {
+                message_count: 0,
+                code_sample: msg.extract
+            };
         }
-        summary[ i.type ].messages[ i.message ]++;
+        summary[ msg.type ].messages[ msg.message ].message_count++;
     } );
 
     // Sort summary object
     summary.info.messages = Object.keys( summary.info.messages )
-        .sort( ( a, b ) => summary.info.messages[ b ] - summary.info.messages[ a ] )
+        .sort( ( a, b ) => summary.info.messages[ b ].message_count - summary.info.messages[ a ].message_count )
         .reduce( ( _sortedObj, key ) => ( { ..._sortedObj, [ key ]: summary.info.messages[ key ] } ), {} );
 
     summary.error.messages = Object.keys( summary.error.messages )
-        .sort( ( a, b ) => summary.error.messages[ b ] - summary.error.messages[ a ] )
+        .sort( ( a, b ) => summary.error.messages[ b ].message_count - summary.error.messages[ a ].message_count )
         .reduce( ( _sortedObj, key ) => ( { ..._sortedObj, [ key ]: summary.error.messages[ key ] } ), {} );
 
 
@@ -58,19 +63,29 @@ const w3cURL = `https://validator.w3.org/nu/?doc=${ siteURL }&out=json`;
     } else {
         const p2 = 'team51validator.wordpress.com';
 
-        let htmlData = `<pre class="wp-block-verse">There are ${ summary.error.count } errors and ${ summary.info.count } info warnings</pre>`;
+        // Construct HTML for Post
+        let htmlData = `<pre class="wp-block-verse">There are ${ summary.error.type_count } errors and ${ summary.info.type_count } info warnings</pre>`;
 
         htmlData += '<h2>Errors</h2>';
         htmlData += '<ul>';
         Object.keys( summary.error.messages ).forEach( ( key ) => {
-            htmlData += `<li>${ summary.error.messages[ key ] } findings for: ${ key }</li>`;
+            htmlData += `<li>${ summary.error.messages[ key ].message_count } findings for: ${ key }
+                            <ul><li>eg: ${ summary.error.messages[ key ].code_sample.replace( /[\u00A0-\u9999<>\&]/g, function ( i ) {
+                return '&#' + i.charCodeAt( 0 ) + ';';
+            } ) }</li></ul>
+                        </li>`;
         } )
         htmlData += '</ul>';
 
-        htmlData += '<h2>Warnings</h2>';
+        htmlData += '<h2>Warnings/Info</h2>';
         htmlData += '<ul>';
         Object.keys( summary.info.messages ).forEach( ( key ) => {
-            htmlData += `<li>${ summary.info.messages[ key ] } findings for: ${ key }</li>`;
+            htmlData += `<li>
+                            ${ summary.info.messages[ key ].message_count } findings for: ${ key }
+                            <ul><li>eg: ${ summary.info.messages[ key ].code_sample.replace( /[\u00A0-\u9999<>\&]/g, function ( i ) {
+                return '&#' + i.charCodeAt( 0 ) + ';';
+            } ) }</li></ul>
+                        </li>`;
         } )
         htmlData += '</ul>';
 
