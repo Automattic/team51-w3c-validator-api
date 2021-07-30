@@ -11,6 +11,8 @@ yargs.usage( "\nUsage: t51check URL to be validated" ).help( true ).argv;
 const params = yargs.argv._;
 const save = yargs.argv.save;
 
+const P2_SITE = 'team51validator.wordpress.com';
+
 const siteURL = params[ 0 ];
 const w3cURL = `https://validator.w3.org/nu/?doc=${ siteURL }&out=json`;
 
@@ -27,7 +29,47 @@ const w3cURL = `https://validator.w3.org/nu/?doc=${ siteURL }&out=json`;
     } );
 
     // Process data to create a summary object
+    const summary = generateSummary( data );
+
+    // Post to P2 or show inline
+    if ( !save ) {
+        console.log( "Summary: ", summary );
+        console.log( "Running the command with --save argument will pipe this results to the team51validator P2" );
+    } else {
+
+        const htmlData = generateHtmlPost( summary );
+
+        const postData = {
+            title: `Check for: ${ siteURL }`,
+            tags: [],
+            content: htmlData
+        }
+
+        //console.log( P2_SITE );
+        wpcom.site( P2_SITE )
+            .addPost( postData, function ( err, post ) {
+                if ( err ) {
+                    console.log( "Oops, something went wrong.", err );
+                } else {
+                    console.log( "P2 entry created! Visit", post.short_URL );
+                }
+            } );
+
+    }
+
+} )();
+
+/**
+ * Formats the W3C validator response into a summary object, that categorizes
+ * the data into error or info, and counts how many individual messages there
+ * are in each category. Also appends a code sample for each error.
+ * 
+ * @param {*} data 
+ * @returns {*} summary 
+ */
+function generateSummary ( data ) {
     const summary = [];
+
     data.messages.forEach( msg => {
         // Type could be 'info' or 'error'
         if ( !summary[ msg.type ] ) {
@@ -46,7 +88,7 @@ const w3cURL = `https://validator.w3.org/nu/?doc=${ siteURL }&out=json`;
         summary[ msg.type ].messages[ msg.message ].message_count++;
     } );
 
-    // Sort summary object
+    // Sort summary object by number of messages
     summary.info.messages = Object.keys( summary.info.messages )
         .sort( ( a, b ) => summary.info.messages[ b ].message_count - summary.info.messages[ a ].message_count )
         .reduce( ( _sortedObj, key ) => ( { ..._sortedObj, [ key ]: summary.info.messages[ key ] } ), {} );
@@ -55,55 +97,38 @@ const w3cURL = `https://validator.w3.org/nu/?doc=${ siteURL }&out=json`;
         .sort( ( a, b ) => summary.error.messages[ b ].message_count - summary.error.messages[ a ].message_count )
         .reduce( ( _sortedObj, key ) => ( { ..._sortedObj, [ key ]: summary.error.messages[ key ] } ), {} );
 
+    return summary;
+}
 
-    // Post to P2 or show inline
-    if ( !save ) {
-        console.log( "Summary: ", summary );
-        console.log( "Running the command with --save argument will pipe this results to the team51validator P2" );
-    } else {
-        const p2 = 'team51validator.wordpress.com';
+/**
+ * Generates the HTML for the WordPress P2 post
+ * 
+ * @param {*} summary 
+ */
+function generateHtmlPost ( summary ) {
+    let htmlData = `<pre class="wp-block-verse">There are ${ summary.error.type_count } errors and ${ summary.info.type_count } info warnings</pre>`;
 
-        // Construct HTML for Post
-        let htmlData = `<pre class="wp-block-verse">There are ${ summary.error.type_count } errors and ${ summary.info.type_count } info warnings</pre>`;
+    htmlData += '<h2>Errors</h2>';
+    htmlData += '<ul>';
+    Object.keys( summary.error.messages ).forEach( ( key ) => {
+        htmlData += `<li>${ summary.error.messages[ key ].message_count } findings for: ${ key }
+                        <ul><li>eg: ${ summary.error.messages[ key ].code_sample.replace( /[\u00A0-\u9999<>\&]/g, ( i ) => {
+            return '&#' + i.charCodeAt( 0 ) + ';';
+        } ) }</li></ul></li>`;
+    } )
+    htmlData += '</ul>';
 
-        htmlData += '<h2>Errors</h2>';
-        htmlData += '<ul>';
-        Object.keys( summary.error.messages ).forEach( ( key ) => {
-            htmlData += `<li>${ summary.error.messages[ key ].message_count } findings for: ${ key }
-                            <ul><li>eg: ${ summary.error.messages[ key ].code_sample.replace( /[\u00A0-\u9999<>\&]/g, function ( i ) {
-                return '&#' + i.charCodeAt( 0 ) + ';';
-            } ) }</li></ul>
-                        </li>`;
-        } )
-        htmlData += '</ul>';
+    htmlData += '<h2>Warnings/Info</h2>';
+    htmlData += '<ul>';
+    Object.keys( summary.info.messages ).forEach( ( key ) => {
+        htmlData += `<li>
+                        ${ summary.info.messages[ key ].message_count } findings for: ${ key }
+                        <ul><li>eg: ${ summary.info.messages[ key ].code_sample.replace( /[\u00A0-\u9999<>\&]/g, ( i ) => {
+            return '&#' + i.charCodeAt( 0 ) + ';';
+        } ) }</li></ul>
+                    </li>`;
+    } )
+    htmlData += '</ul>';
 
-        htmlData += '<h2>Warnings/Info</h2>';
-        htmlData += '<ul>';
-        Object.keys( summary.info.messages ).forEach( ( key ) => {
-            htmlData += `<li>
-                            ${ summary.info.messages[ key ].message_count } findings for: ${ key }
-                            <ul><li>eg: ${ summary.info.messages[ key ].code_sample.replace( /[\u00A0-\u9999<>\&]/g, function ( i ) {
-                return '&#' + i.charCodeAt( 0 ) + ';';
-            } ) }</li></ul>
-                        </li>`;
-        } )
-        htmlData += '</ul>';
-
-        const postData = {
-            title: `Check for: ${ siteURL }`,
-            tags: [],
-            content: htmlData
-        }
-
-        wpcom.site( p2 )
-            .addPost( postData, function ( err, post ) {
-                if ( err ) {
-                    console.log( "Oops, something went wrong.", err );
-                } else {
-                    console.log( "P2 entry created! Visit", post.short_URL );
-                }
-            } );
-
-    }
-
-} )();
+    return htmlData;
+}
