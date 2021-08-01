@@ -4,20 +4,17 @@ require( 'dotenv' ).config()
 const yargs = require( 'yargs' );
 const axios = require( 'axios' );
 const chalk = require( 'chalk' );
+const log = console.log;
 
 const wpcom = require( 'wpcom' )( process.env.WP_API_ACCOUNT_TOKEN );
-
-yargs.usage( "\nUsage: t51check URL to be validated" ).help( true ).argv;
-
-const params = yargs.argv._;
-const save = yargs.argv.save;
-
 const P2_SITE = 'team51validator.wordpress.com';
 
+yargs.usage( "\nUsage: t51check URL to be validated" ).help( true ).argv;
+const params = yargs.argv._; // URL (and other arguments if required in the future)
 const siteURL = params[ 0 ];
-const w3cURL = `https://validator.w3.org/nu/?doc=${ siteURL }&out=json`;
+const save = yargs.argv.save; // --save argument
 
-const log = console.log;
+const w3cURL = `https://validator.w3.org/nu/?doc=${ siteURL }&out=json`;
 
 /**
  * Initial API Request
@@ -36,27 +33,25 @@ const log = console.log;
     // Process data to create a summary object
     const summary = generateSummary( data );
 
-    // Post to P2 or show inline
+    // --save will pipe the summary to the P2 blog
     if ( !save ) {
         formatTerminalOutput( summary );
         log( "Running the command with --save argument will pipe this results to the team51validator P2" );
+    
+    // otherwise we just print the data in the terminal
     } else {
-
-        const htmlData = generateHtmlPost( summary );
-
         const postData = {
             title: `Check for: ${ siteURL }`,
             tags: [],
-            content: htmlData
+            content: generateHtmlPost( summary )
         }
 
-        //log( P2_SITE );
         wpcom.site( P2_SITE )
             .addPost( postData, function ( err, post ) {
                 if ( err ) {
-                    log( "Oops, something went wrong.", err );
+                    log( chalk.bgRed( 'Oops, something went wrong when creating the P2 post\nPlease try again. If the problem persists you can always run the command without --save to view the results in the Terminal\n' ), err );
                 } else {
-                    log( "P2 entry created! Visit", post.short_URL );
+                    log( chalk.bgGreen( "P2 entry created! Visit:" ), post.short_URL );
                 }
             } );
 
