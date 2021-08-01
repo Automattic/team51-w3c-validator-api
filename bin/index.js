@@ -1,8 +1,9 @@
 #! /usr/bin/env node
 
 require( 'dotenv' ).config()
-const yargs = require( "yargs" );
+const yargs = require( 'yargs' );
 const axios = require( 'axios' );
+const chalk = require( 'chalk' );
 
 const wpcom = require( 'wpcom' )( process.env.WP_API_ACCOUNT_TOKEN );
 
@@ -16,7 +17,11 @@ const P2_SITE = 'team51validator.wordpress.com';
 const siteURL = params[ 0 ];
 const w3cURL = `https://validator.w3.org/nu/?doc=${ siteURL }&out=json`;
 
+const log = console.log;
 
+/**
+ * Initial API Request
+ */
 ( async function () {
     // Pull data from w3.org
     const { data } = await axios( {
@@ -33,8 +38,8 @@ const w3cURL = `https://validator.w3.org/nu/?doc=${ siteURL }&out=json`;
 
     // Post to P2 or show inline
     if ( !save ) {
-        console.log( "Summary: ", summary );
-        console.log( "Running the command with --save argument will pipe this results to the team51validator P2" );
+        formatTerminalOutput( summary );
+        log( "Running the command with --save argument will pipe this results to the team51validator P2" );
     } else {
 
         const htmlData = generateHtmlPost( summary );
@@ -45,13 +50,13 @@ const w3cURL = `https://validator.w3.org/nu/?doc=${ siteURL }&out=json`;
             content: htmlData
         }
 
-        //console.log( P2_SITE );
+        //log( P2_SITE );
         wpcom.site( P2_SITE )
             .addPost( postData, function ( err, post ) {
                 if ( err ) {
-                    console.log( "Oops, something went wrong.", err );
+                    log( "Oops, something went wrong.", err );
                 } else {
-                    console.log( "P2 entry created! Visit", post.short_URL );
+                    log( "P2 entry created! Visit", post.short_URL );
                 }
             } );
 
@@ -112,10 +117,9 @@ function generateHtmlPost ( summary ) {
     htmlData += '<ul>';
     Object.keys( summary.error.messages ).forEach( ( key ) => {
         htmlData += `<li>${ summary.error.messages[ key ].message_count } findings for: ${ key }
-                        <ul><li>eg: ${ summary.error.messages[ key ].code_sample.replace( /[\u00A0-\u9999<>\&]/g, ( i ) => {
-            return '&#' + i.charCodeAt( 0 ) + ';';
-        } ) }</li></ul></li>`;
-    } )
+                        <ul><li>eg: ${ encodeHtmlEntities(summary.error.messages[ key ].code_sample)}</li></ul>
+                    </li>`;
+    } );
     htmlData += '</ul>';
 
     htmlData += '<h2>Warnings/Info</h2>';
@@ -123,12 +127,40 @@ function generateHtmlPost ( summary ) {
     Object.keys( summary.info.messages ).forEach( ( key ) => {
         htmlData += `<li>
                         ${ summary.info.messages[ key ].message_count } findings for: ${ key }
-                        <ul><li>eg: ${ summary.info.messages[ key ].code_sample.replace( /[\u00A0-\u9999<>\&]/g, ( i ) => {
-            return '&#' + i.charCodeAt( 0 ) + ';';
-        } ) }</li></ul>
+                        <ul><li>eg: ${ encodeHtmlEntities(summary.info.messages[ key ].code_sample) }</li></ul>
                     </li>`;
-    } )
+    } );
     htmlData += '</ul>';
 
     return htmlData;
+}
+
+/**
+ * Generates the text version for the Terminal
+ * 
+ * @param {*} summary 
+ */
+ function formatTerminalOutput ( summary ) {
+    log(chalk.bold(`There are ${ summary.error.type_count } errors and ${ summary.info.type_count } info warnings\n`));
+
+    log(chalk.bgRed('Errors\n'));
+    Object.keys( summary.error.messages ).forEach( ( key ) => {
+        log( chalk.underline(`${ summary.error.messages[ key ].message_count } findings`) + ` for: ${ chalk.italic(key) } \n ${ chalk.italic.dim( summary.error.messages[ key ].code_sample ) }\n`);
+    } )
+
+    log(chalk.bgYellow('Warnings/Info\n'));
+    Object.keys( summary.info.messages ).forEach( ( key ) => {
+        log( chalk.underline(`${ summary.info.messages[ key ].message_count } findings`) + ` for: ${ chalk.italic(key) } \n ${ chalk.italic.dim( summary.info.messages[ key ].code_sample ) }\n`);
+    } )
+}
+
+/**
+ * Utility function to convert HTML tags in a way WP Editor will output correctly
+ * @param {*} string 
+ * @returns 
+ */
+function encodeHtmlEntities( string ) {
+    return string.replace( /[\u00A0-\u9999<>\&]/g, ( i ) => {
+        return '&#' + i.charCodeAt( 0 ) + ';'
+    } );
 }
