@@ -22,8 +22,6 @@ const siteURL = params[ 0 ];
 const save = yargs.argv.save; // --save argument
 const crawl = yargs.argv.crawl; // --save argument
 
-const w3cURL = `https://validator.w3.org/nu/?doc=${ siteURL }&out=json`;
-
 /**
  * Initial API Request
  */
@@ -34,8 +32,6 @@ const w3cURL = `https://validator.w3.org/nu/?doc=${ siteURL }&out=json`;
         await scrapLinks(siteURL)
             .then(({ data, response }) => {
                 let limit = typeof crawl === 'number' ? true : false;
-                console.log("limit", limit);
-                
                 if ( response.statusCode === 200 ) {
                     for (let i = 0; i < data.links.length; i++) {
                         if ( limit && (i >= crawl) ) {
@@ -47,17 +43,27 @@ const w3cURL = `https://validator.w3.org/nu/?doc=${ siteURL }&out=json`;
             });
     }
 
-    console.log('Gonna inspect these URLs:', inspectURLs);
+    log('Evaluating these URLs:', inspectURLs);
 
     // Pull data from w3.org
-    const { data } = await axios( {
-        method: 'GET',
-        url: w3cURL,
-        headers: {
-            'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2272.101 Safari/537.36',
-            'Content-Type': 'text/html; charset=UTF-8'
-        }
+    const inspectURLPromises = [];
+    inspectURLs.forEach( url => {    
+        inspectURLPromises.push(
+            axios( {
+                method: 'GET',
+                url: `https://validator.w3.org/nu/?doc=${ url }&out=json`,
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2272.101 Safari/537.36',
+                    'Content-Type': 'text/html; charset=UTF-8'
+                }
+            } )
+        );
     } );
+
+    let responses = await axios.all(inspectURLPromises);
+    const data = {
+        messages : responses.map( response => response.data.messages ).flat()
+    }
 
     // Process data to create a summary object
     const summary = generateSummary( data );
