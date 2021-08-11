@@ -137,21 +137,33 @@ exports.scrapLinks = ( url ) => {
  */
 function generateChart( data ) {
     const messages = data.messages;
-    const chart_colors = [ 'darksalmon', 'moccasin', 'thistle', 'skyblue' ];
+    const chart_colors = [ 'powderblue', 'darksalmon', 'beige', 'thistle', 'moccasin', 'skyblue' ];
+    let current_color_index;
     
     let tempHtmlChart = '';
     tempHtmlChart = '<div style="display:flex; height:26px; text-align:center; color:#333; font-size:0.9rem; margin-bottom:1rem;">';
+    let other_percentage = 0;
     Object.keys( messages ).forEach( ( key, index ) => {
-        const chart_up_to = 3;
-        const message_count = messages[ key ].message_count;
-        const percetage = Math.ceil(message_count / data.type_count * 100);
-        const bar_bg_color = chart_colors[ ( index < chart_up_to ? index : chart_up_to ) ];
-        const bar_title = ( index < chart_up_to ? key : 'Other' );
-        const bar_value = ( index <= chart_up_to ? `${percetage}%` : '' );
+        current_color_index = index < chart_colors.length ? index : 0;
 
-        // not rendered yet on screen, just storing value from the loop
-        tempHtmlChart += `<div title="${bar_title}" style="width:${percetage}%; background:${bar_bg_color};">${bar_value}</div>`; 
+        const bar_bg_color = chart_colors[current_color_index];
+        const message_count = parseInt(messages[ key ].message_count);
+        const percentage = parseFloat(message_count / parseInt(data.type_count) * 100).toFixed(1);
+        const bar_title = key;
+        const bar_value = `${percentage}%`;
+        
+        if ( percentage > 5 ) {
+            // not rendered yet on screen, just storing value from the loop
+            tempHtmlChart += `<div title="${bar_title}" style="width:${percentage}%; background:${bar_bg_color};">${bar_value}</div>`; 
+        } else {
+            other_percentage += parseFloat(percentage);
+        }
     });
+    if ( other_percentage ) {
+        other_percentage = other_percentage.toFixed(1);
+        tempHtmlChart += `<div title="Other" style="width:${other_percentage}%; background:#aaa;">${other_percentage}%</div>`; 
+    }
     tempHtmlChart += '</div>';
+
     return tempHtmlChart;
 }

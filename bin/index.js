@@ -62,6 +62,7 @@ const crawl = yargs.argv.crawl; // --save argument
 
     let responses = await axios.all(inspectURLPromises);
     const data = {
+        urls: inspectURLs,
         messages : responses.map( response => response.data.messages ).flat()
     }
 
@@ -80,8 +81,6 @@ const crawl = yargs.argv.crawl; // --save argument
             tags: [],
             content: generateHtmlPost( summary )
         }
-
-        //console.log( postData );
 
         wpcom.site( P2_SITE )
             .addPost( postData, function ( err, post ) {
