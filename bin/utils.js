@@ -1,4 +1,5 @@
 const chalk = require( 'chalk' );
+const scrapeIt = require("scrape-it")
 
 /**
  * Generates the text version for the Terminal
@@ -77,7 +78,7 @@ exports.generateSummary = ( data ) => {
     Object.keys( summary.error.messages ).forEach( ( key, index ) => {
         const error_message = summary.error.messages[ key ];
         htmlData += `<li>${ error_message.message_count } findings for: ${ key }
-                        <ul><li><em>eg: ${ encodeHtmlEntities(error_message.code_sample)}</em></li></ul>
+                        <ul><li><code style="font-size: 0.75rem;">${ encodeHtmlEntities(error_message.code_sample)}</code></li></ul>
                     </li>`;
     } );
     htmlData += '</ul>';
@@ -88,12 +89,30 @@ exports.generateSummary = ( data ) => {
     Object.keys( summary.info.messages ).forEach( ( key ) => {
         htmlData += `<li>
                         ${ summary.info.messages[ key ].message_count } findings for: ${ key }
-                        <ul><li>eg: ${ encodeHtmlEntities(summary.info.messages[ key ].code_sample) }</li></ul>
+                        <ul><li><code style="font-size: 0.75rem;">${ encodeHtmlEntities(summary.info.messages[ key ].code_sample) }</code></li></ul>
                     </li>`;
     } );
     htmlData += '</ul>';
 
     return htmlData;
+}
+
+/**
+ * Scraps all the a[href] in a given URL
+ * @param {string} url 
+ * @returns object with an  array of links
+ */
+exports.scrapLinks = ( url ) => {
+    return scrapeIt(url, {
+        links: {
+            listItem: "a",
+            data: {
+                href: {
+                    attr: "href"
+                }
+            }
+        }
+    });
 }
 
 /**
@@ -103,9 +122,13 @@ exports.generateSummary = ( data ) => {
  * @returns 
  */
  encodeHtmlEntities = ( string ) => {
-    return string.replace( /[\u00A0-\u9999<>\&]/g, ( i ) => {
-        return '&#' + i.charCodeAt( 0 ) + ';'
-    } );
+    return string
+        .replace( /[\u00A0-\u9999<>\&]/g, ( i ) => {
+            return '&#' + i.charCodeAt( 0 ) + ';'
+        } )
+        .trim()
+        .replace(/\s+/g, ' ')
+        .replace(/\n/g, "<br />");
 }
 
 /**
