@@ -9,7 +9,8 @@ const log = console.log;
 const { 
     generateSummary,
     formatTerminalOutput,
-    generateHtmlPost
+    generateHtmlPost,
+    scrapLinks
 } = require('./utils');
 
 const wpcom = require( 'wpcom' )( process.env.WP_API_ACCOUNT_TOKEN );
@@ -19,6 +20,7 @@ yargs.usage( "\nUsage: t51check URL to be validated" ).help( true ).argv;
 const params = yargs.argv._; // URL (and other arguments if required in the future)
 const siteURL = params[ 0 ];
 const save = yargs.argv.save; // --save argument
+const crawl = yargs.argv.crawl; // --save argument
 
 const w3cURL = `https://validator.w3.org/nu/?doc=${ siteURL }&out=json`;
 
@@ -26,6 +28,27 @@ const w3cURL = `https://validator.w3.org/nu/?doc=${ siteURL }&out=json`;
  * Initial API Request
  */
 ( async function () {
+    // Scrap given URL to include in inspectURLs
+    const inspectURLs = [ siteURL ];
+    if ( crawl ) {
+        await scrapLinks(siteURL)
+            .then(({ data, response }) => {
+                let limit = typeof crawl === 'number' ? true : false;
+                console.log("limit", limit);
+                
+                if ( response.statusCode === 200 ) {
+                    for (let i = 0; i < data.links.length; i++) {
+                        if ( limit && (i >= crawl) ) {
+                            break;
+                        }
+                        inspectURLs.push( data.links[i].href );
+                    }
+                }
+            });
+    }
+
+    console.log('Gonna inspect these URLs:', inspectURLs);
+
     // Pull data from w3.org
     const { data } = await axios( {
         method: 'GET',
