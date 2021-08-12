@@ -67,11 +67,16 @@ exports.generateSummary = ( data ) => {
  * Generates the HTML for the WordPress P2 post
  * 
  * @param {*} summary 
+ * @param {string} inspectURLs[]
  */
- exports.generateHtmlPost = ( summary ) => {
+ exports.generateHtmlPost = ( summary, inspectURLs ) => {
     let htmlData = '';
     
-    htmlData += `<pre class="wp-block-verse">There are ${ summary.error.type_count } errors and ${ summary.info.type_count } info warnings</pre>`; 
+    htmlData += `<p>The following URLs were inspected:</p>`; 
+    htmlData += `<ul>`; 
+    htmlData += inspectURLs.map( item => `<li>${item}</li>` ).join("");
+    htmlData += `</ul>`; 
+    htmlData += `<p>${ summary.error.type_count } errors and ${ summary.info.type_count } info warnings were encountered.</p>`; 
     htmlData += '<h2>Errors</h2>';
     htmlData += generateChart(summary.error);
     htmlData += '<ul>';
@@ -82,6 +87,7 @@ exports.generateSummary = ( data ) => {
                     </li>`;
     } );
     htmlData += '</ul>';
+
 
     htmlData += '<h2>Warnings/Info</h2>';
     htmlData += generateChart(summary.info);
