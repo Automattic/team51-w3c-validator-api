@@ -27,21 +27,35 @@ const crawl = yargs.argv.crawl; // --save argument
  */
 ( async function () {
     // Scrap given URL to include in inspectURLs
-    const inspectURLs = [ siteURL ];
+    let inspectURLs = [ siteURL ];
     if ( crawl ) {
         await scrapLinks(siteURL)
             .then(({ data, response }) => {
                 let limit = typeof crawl === 'number' ? true : false;
                 if ( response.statusCode === 200 ) {
                     for (let i = 0; i < data.links.length; i++) {
-                        if ( limit && (i >= crawl) ) {
+                        const url = data.links[i].href.replace(/\/$/, ""); // remove trailing slash
+                        if ( inspectURLs.includes( url ) ) {
+                            continue;
+                        }
+                        // Verify it's actually a URL
+                        if ( url.indexOf('http') !== 0 ) {
+                            // TODO: support relative paths
+                            continue;
+                        }
+                        if ( limit && (inspectURLs.length >= crawl) ) {
                             break;
                         }
-                        inspectURLs.push( data.links[i].href );
+                            
+                        inspectURLs.push( url );
+                        
                     }
                 }
             });
     }
+
+    // Remove duplicates
+    inspectURLs = Array.from(new Set(inspectURLs));
 
     log('Evaluating these URLs:', inspectURLs);
 
@@ -78,10 +92,8 @@ const crawl = yargs.argv.crawl; // --save argument
         const postData = {
             title: `Check for: ${ siteURL }`,
             tags: [],
-            content: generateHtmlPost( summary )
+            content: generateHtmlPost( summary, inspectURLs )
         }
-
-        //console.log( postData );
 
         wpcom.site( P2_SITE )
             .addPost( postData, function ( err, post ) {
