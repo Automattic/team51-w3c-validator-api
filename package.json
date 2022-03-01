@@ -19,9 +19,7 @@
   "dependencies": {
     "axios": "^0.21.1",
     "chalk": "^4.1.2",
-    "dotenv": "^10.0.0",
-    "scrape-it": "^5.3.1",
-    "wpcom": "^5.4.2",
-    "yargs": "^17.0.1"
+    "express": "^4.17.3",
+    "scrape-it": "^5.3.1"
   }
 }
