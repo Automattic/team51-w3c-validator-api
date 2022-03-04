@@ -81,7 +81,7 @@ app.get("/evaluate", (req, res, next) => {
         // Process data to create a summary object
         const summary = generateSummary( data );
         const postData = {
-            title: `Check for: ${ url }`,
+            title: `HTML Validator | ${ url }`,
             tags: [],
             content: generateHtmlPost( summary, inspectURLs )
         }

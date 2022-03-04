@@ -78,7 +78,8 @@ exports.generateSummary = ( data ) => {
     htmlData += `</ul>`; 
     htmlData += `<p>${ summary.error.type_count } errors and ${ summary.info.type_count } info warnings were encountered.</p>`; 
     htmlData += '<h2>Errors</h2>';
-    htmlData += generateChart(summary.error);
+    htmlData += '<details>';
+    htmlData += `<summary>View ${summary.error.type_count} errors</summary>`;
     htmlData += '<ul>';
     Object.keys( summary.error.messages ).forEach( ( key, index ) => {
         const error_message = summary.error.messages[ key ];
@@ -87,10 +88,12 @@ exports.generateSummary = ( data ) => {
                     </li>`;
     } );
     htmlData += '</ul>';
+    htmlData += '</details>';
 
 
     htmlData += '<h2>Warnings/Info</h2>';
-    htmlData += generateChart(summary.info);
+    htmlData += '<details>';
+    htmlData += `<summary>View ${summary.info.type_count} warnings</summary>`;
     htmlData += '<ul>';
     Object.keys( summary.info.messages ).forEach( ( key ) => {
         htmlData += `<li>
@@ -99,6 +102,7 @@ exports.generateSummary = ( data ) => {
                     </li>`;
     } );
     htmlData += '</ul>';
+    htmlData += '</details>';
 
     return htmlData;
 }
@@ -143,7 +147,7 @@ exports.scrapLinks = ( url ) => {
  */
 function generateChart( data ) {
     const messages = data.messages;
-    const chart_colors = [ 'powderblue', 'darksalmon', 'beige', 'thistle', 'moccasin', 'skyblue' ];
+    const chart_colors = [ 'darksalmon', 'moccasin' ];
     let current_color_index;
     
     let tempHtmlChart = '';
