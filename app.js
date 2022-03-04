@@ -6,7 +6,7 @@ const log = console.log;
 
 const { 
     generateSummary,
-    formatTerminalOutput,
+    tagsForP2Post,
     generateHtmlPost,
     scrapLinks
 } = require('./bin/utils');
@@ -23,7 +23,7 @@ app.get("/evaluate", (req, res, next) => {
         res.json("Provide a URL");
     }
 
-    log( `Evaluating ${url}. Crawl: ${crawl}` );
+    //log( `Evaluating ${url}. Crawl: ${crawl}` );
     ( async function () {
         // Scrap given URL to include in inspectURLs
         let inspectURLs = [ url ];
@@ -82,7 +82,7 @@ app.get("/evaluate", (req, res, next) => {
         const summary = generateSummary( data );
         const postData = {
             title: `HTML Validator | ${ url }`,
-            tags: [],
+            tags: tagsForP2Post( url ),
             content: generateHtmlPost( summary, inspectURLs )
         }
     

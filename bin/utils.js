@@ -126,6 +126,24 @@ exports.scrapLinks = ( url ) => {
 }
 
 /**
+ * Returns a list of tags for the P2 post
+ * @param {string} url
+ * @returns array of strings
+ */
+exports.tagsForP2Post = ( url ) => {
+    const tag = "t51w3c-" + url
+        .toLowerCase()
+        .replace(/^https?\:\/\//i, "")
+        .replace("www.", "")
+        .replace(/\//g,'-')
+        .replace(/\./g,'-')
+        .replace(/ /g,'-')
+        .replace(/[^\w-]+/g,'')
+        .replace(/-$/, '');
+     return ['t51w3c', tag ];
+}
+
+/**
  * Private function
  * Utility function to convert HTML tags in a way WP Editor will output correctly
  * @param {*} string 
