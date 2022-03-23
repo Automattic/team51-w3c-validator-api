@@ -150,6 +150,9 @@ exports.tagsForP2Post = ( url ) => {
  * @returns 
  */
  encodeHtmlEntities = ( string ) => {
+    if ( !string ) {
+        return '';
+    }
     return string
         .replace( /[\u00A0-\u9999<>\&]/g, ( i ) => {
             return '&#' + i.charCodeAt( 0 ) + ';'
