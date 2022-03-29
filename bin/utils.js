@@ -31,10 +31,13 @@ exports.formatTerminalOutput = ( summary ) => {
 * @returns {*} summary 
 */
 exports.generateSummary = ( data ) => {
-   const summary = [];
+   const summary = {
+       info : { type_count: 0, messages: {} },
+       error : { type_count: 0, messages: {} }
+   };
 
    data.messages.forEach( msg => {
-       // Type could be 'info' or 'error'
+       // Type would typically be 'info' or 'error'
        if ( !summary[ msg.type ] ) {
            summary[ msg.type ] = { type_count: 0, messages: {} };
        }
