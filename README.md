@@ -7,27 +7,23 @@ It is used by the Team51 Monitor tool to evaluate our sites periodically. Result
 
 The API is hosted in Team51 AWS instance.
 
+## Installation
+
+For local development, clone the site and run `npm install`
+
+
 ## Use
 
-Local:
+You can start a local Express server by running `node app.js`
 ```
 http://localhost:3000/evaluate?url=https://url-to-evaluate.com
 ```
 
-Production:
+On Production, this was deployed using PM2 package: `pm2 start app.js --name "Team51 HTML Validator" -- run start`
 ```
 http://ec2-***REMOVED***.us-east-2.compute.amazonaws.com:3000/evaluate?url=https://url-to-evaluate.com
 ```
 
-## Installation
-
-For local development, clone the site and run `npm install`
-After that, you can start the Express server by running `node app.js`
-
-On Production, this was deployed using PM2 package:
-```
-pm2 start app.js --name "Team51 HTML Validator" -- run start
-```
 
  ### Known issues
  - W3C API might respond some times with two message types different than `error` and `info`. If a `fatalerror` is returned, it won't be processed correctly.
