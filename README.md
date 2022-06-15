@@ -21,7 +21,7 @@ http://localhost:3000/evaluate?url=https://url-to-evaluate.com
 
 On Production, this was deployed using PM2 package: `pm2 start app.js --name "Team51 HTML Validator" -- run start`
 ```
-http://ec2-***REMOVED***.us-east-2.compute.amazonaws.com:3000/evaluate?url=https://url-to-evaluate.com
+http://ec2-[my-server].us-east-2.compute.amazonaws.com:3000/evaluate?url=https://url-to-evaluate.com
 ```
 
 
