@@ -82,7 +82,7 @@ app.get("/evaluate", (req, res, next) => {
             // Process data to create a summary object
             const summary = generateSummary( data );
             const postData = {
-                title: `HTML Validator | ${ url }`,
+                title: `HTML Validator | ${ url } | ${ summary.error.type_count  } errors`,
                 tags: tagsForP2Post( url ),
                 content: generateHtmlPost( summary, inspectURLs )
             }
