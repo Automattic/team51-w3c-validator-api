@@ -76,18 +76,20 @@ exports.generateSummary = ( data ) => {
     let htmlData = '';
     
     htmlData += `<p>The following URLs were inspected:</p>`; 
-    htmlData += `<ul>`; 
+    htmlData += `<ul class="t51-w3c-urls">`; 
     htmlData += inspectURLs.map( item => `<li>${item}</li>` ).join("");
     htmlData += `</ul>`; 
-    htmlData += `<p>${ summary.error.type_count } errors and ${ summary.info.type_count } info warnings were encountered.</p>`; 
+    htmlData += `<p class="t51-w3c-summary">${ summary.error.type_count } errors and ${ summary.info.type_count } info warnings were encountered.</p>`; 
     htmlData += '<h2>Errors</h2>';
     htmlData += '<details>';
-    htmlData += `<summary>View ${summary.error.type_count} errors</summary>`;
-    htmlData += '<ul>';
+    htmlData += `<summary class="t51-w3c-errors-summary">View ${summary.error.type_count} errors</summary>`;
+    htmlData += '<ul class="t51-w3c-errors-list">';
     Object.keys( summary.error.messages ).forEach( ( key, index ) => {
         const error_message = summary.error.messages[ key ];
-        htmlData += `<li>${ error_message.message_count } findings for: ${ key }
-                        <ul><li><code style="font-size: 0.75rem;">${ encodeHtmlEntities(error_message.code_sample)}</code></li></ul>
+        htmlData += `<li class="t51-w3c-error-item">
+                        <span class="t51-w3c-error-item-count">${ error_message.message_count }</span> findings for: 
+                        <span class="t51-w3c-error-item-msg">${ key }</span>
+                        <ul class="t51-w3c-error-item-examples"><li><code style="font-size: 0.75rem;">${ encodeHtmlEntities(error_message.code_sample)}</code></li></ul>
                     </li>`;
     } );
     htmlData += '</ul>';
@@ -96,12 +98,13 @@ exports.generateSummary = ( data ) => {
 
     htmlData += '<h2>Warnings/Info</h2>';
     htmlData += '<details>';
-    htmlData += `<summary>View ${summary.info.type_count} warnings</summary>`;
-    htmlData += '<ul>';
+    htmlData += `<summary class="t51-w3c-warnings-summary">View ${summary.info.type_count} warnings</summary>`;
+    htmlData += '<ul class="t51-w3c-warnings-list">';
     Object.keys( summary.info.messages ).forEach( ( key ) => {
-        htmlData += `<li>
-                        ${ summary.info.messages[ key ].message_count } findings for: ${ key }
-                        <ul><li><code style="font-size: 0.75rem;">${ encodeHtmlEntities(summary.info.messages[ key ].code_sample) }</code></li></ul>
+        htmlData += `<li class="t51-w3c-error-item">
+                        <span class="t51-w3c-warning-item-count">${ summary.info.messages[ key ].message_count }</span> findings for: 
+                        <span class="t51-w3c-warning-item-msg">${ key }</span>
+                        <ul class="t51-w3c-warning-item-examples"><li><code style="font-size: 0.75rem;">${ encodeHtmlEntities(summary.info.messages[ key ].code_sample) }</code></li></ul>
                     </li>`;
     } );
     htmlData += '</ul>';
