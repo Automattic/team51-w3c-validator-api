@@ -17,6 +17,7 @@ app.listen(3000, () => {
 
 app.get("/evaluate", (req, res, next) => {
     const url = req.query.url;
+    const output = req.query.output || 'html';
     const crawl = req.query.crawl || false;
 
     if ( ! url ) {
@@ -81,6 +82,12 @@ app.get("/evaluate", (req, res, next) => {
         
             // Process data to create a summary object
             const summary = generateSummary( data );
+
+            if ( output === 'json' ) {
+                res.json( summary );
+                return;
+            }
+
             const postData = {
                 title: `HTML Validator | ${ url } | ${ summary.error.type_count  } errors`,
                 tags: tagsForP2Post( url ),
