@@ -1,27 +1,40 @@
 {
-  "name": "team51-validator",
-  "version": "1.0.0",
-  "description": "A Team 51 HTML Validator tool",
-  "author": {
-    "name": "WordPress.com Special Projects Team",
-    "url": "https://wpspecialprojects.wordpress.com/"
-  },
-  "keywords": [
-    "automattic",
-    "team51",
-    "w3c"
-  ],
-  "repository": "https://github.com/Automattic/team51-w3c-validator-api",
-  "bugs": "https://github.com/Automattic/team51-w3c-validator-api/issues",
-  "license": "MIT",
-  "dependencies": {
-    "axios": "^1.4.0",
-    "chalk": "^5.2.0",
-    "express": "^4.18.2",
-    "scrape-it": "^6.0.1"
-  },
-  "engines": {
-    "node": "17.6.0",
-    "npm": "8.5.1"
-  }
+	"name": "team51-validator",
+	"version": "1.0.0",
+	"description": "A Team 51 HTML Validator tool",
+	"author": {
+		"name": "WordPress.com Special Projects Team",
+		"url": "https://wpspecialprojects.wordpress.com/"
+	},
+	"license": "MIT",
+	"keywords": [
+		"automattic",
+		"team51",
+		"w3c"
+	],
+	"repository": "https://github.com/Automattic/team51-w3c-validator-api",
+	"bugs": "https://github.com/Automattic/team51-w3c-validator-api/issues",
+	"engines": {
+		"node": "17.6.0",
+		"npm": "8.5.1"
+	},
+	"dependencies": {
+		"axios": "^1.4.0",
+		"chalk": "^5.2.0",
+		"express": "^4.18.2",
+		"scrape-it": "^6.0.1"
+	},
+	"devDependencies": {
+		"@wordpress/scripts": "^26.6.0"
+	},
+	"scripts": {
+		"start": "node app.js",
+		"format:js": "wp-scripts format . --no-error-on-unmatched-pattern",
+		"lint:js": "wp-scripts lint-js . --no-error-on-unmatched-pattern",
+		"lint:pkg-json": "wp-scripts lint-pkg-json",
+		"lint:readme-md": "wp-scripts lint-md-docs README.md",
+		"packages-update": "wp-scripts packages-update",
+		"check-engines": "wp-scripts check-engines",
+		"check-licenses": "wp-scripts check-licenses"
+	}
 }
