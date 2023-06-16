@@ -1,12 +1,12 @@
-const chalk = require( 'chalk' );
-const scrapeIt = require( 'scrape-it' );
+import chalk from 'chalk';
+import scrapeIt from 'scrape-it';
 
 /**
  * Generates the text version for the Terminal
  *
  * @param {*} summary
  */
-exports.formatTerminalOutput = ( summary ) => {
+export const formatTerminalOutput = ( summary ) => {
 	const chalk = require( 'chalk' );
 	const log = console.log;
 	log(
@@ -48,7 +48,7 @@ exports.formatTerminalOutput = ( summary ) => {
  * @param {*} data
  * @returns {*} summary
  */
-exports.generateSummary = ( data ) => {
+export const generateSummary = ( data ) => {
 	const summary = {
 		info: { type_count: 0, messages: {} },
 		error: { type_count: 0, messages: {} },
@@ -110,7 +110,7 @@ exports.generateSummary = ( data ) => {
  * @param {*} summary
  * @param {string} inspectURLs[]
  */
-exports.generateHtmlPost = ( summary, inspectURLs ) => {
+export const generateHtmlPost = ( summary, inspectURLs ) => {
 	let htmlData = '';
 
 	htmlData += `<p>The following URLs were inspected:</p>`;
@@ -127,7 +127,7 @@ exports.generateHtmlPost = ( summary, inspectURLs ) => {
 		htmlData += `<li class="t51-w3c-error-item">
                         <span class="t51-w3c-error-item-count">${
 							error_message.message_count
-						}</span> findings for: 
+						}</span> findings for:
                         <span class="t51-w3c-error-item-msg">${ key }</span>
                         <ul class="t51-w3c-error-item-examples"><li><code style="font-size: 0.75rem;">${ encodeHtmlEntities(
 							error_message.code_sample
@@ -145,7 +145,7 @@ exports.generateHtmlPost = ( summary, inspectURLs ) => {
 		htmlData += `<li class="t51-w3c-error-item">
                         <span class="t51-w3c-warning-item-count">${
 							summary.info.messages[ key ].message_count
-						}</span> findings for: 
+						}</span> findings for:
                         <span class="t51-w3c-warning-item-msg">${ key }</span>
                         <ul class="t51-w3c-warning-item-examples"><li><code style="font-size: 0.75rem;">${ encodeHtmlEntities(
 							summary.info.messages[ key ].code_sample
@@ -163,7 +163,7 @@ exports.generateHtmlPost = ( summary, inspectURLs ) => {
  * @param {string} url
  * @returns object with an  array of links
  */
-exports.scrapLinks = ( url ) => {
+export const scrapLinks = ( url ) => {
 	return scrapeIt( url, {
 		links: {
 			listItem: 'a',
@@ -181,7 +181,7 @@ exports.scrapLinks = ( url ) => {
  * @param {string} url
  * @returns array of strings
  */
-exports.tagsForP2Post = ( url ) => {
+export const tagsForP2Post = ( url ) => {
 	const tag =
 		't51w3c-' +
 		url
@@ -202,7 +202,7 @@ exports.tagsForP2Post = ( url ) => {
  * @param {*} string
  * @returns
  */
-encodeHtmlEntities = ( string ) => {
+const encodeHtmlEntities = ( string ) => {
 	if ( ! string ) {
 		return '';
 	}

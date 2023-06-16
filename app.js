@@ -1,15 +1,15 @@
-const express = require( 'express' );
-const axios = require( 'axios' );
+import express from 'express';
+import axios from 'axios';
 
 const app = express();
 const log = console.log;
 
-const {
+import {
 	generateSummary,
 	tagsForP2Post,
 	generateHtmlPost,
 	scrapLinks,
-} = require( './bin/utils' );
+} from './bin/utils.js';
 
 app.listen( 3000, () => {
 	log( 'Server running on port 3000' );
