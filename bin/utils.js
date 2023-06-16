@@ -2,169 +2,48 @@ import chalk from 'chalk';
 import scrapeIt from 'scrape-it';
 
 /**
- * Generates the text version for the Terminal
+ * Checks whether a given string is a valid URL.
  *
- * @param {*} summary
+ * @link	https://stackoverflow.com/a/55585593
+ *
+ * @param 	{string}	string	string to check
+ *
+ * @return 	{boolean}
  */
-export const formatTerminalOutput = ( summary ) => {
-	const chalk = require( 'chalk' );
-	const log = console.log;
-	log(
-		chalk.bold(
-			`There are ${ summary.error.type_count } errors and ${ summary.info.type_count } info warnings\n`
-		)
-	);
-
-	log( chalk.bgRed( 'Errors\n' ) );
-	Object.keys( summary.error.messages ).forEach( ( key ) => {
-		log(
-			chalk.underline(
-				`${ summary.error.messages[ key ].message_count } findings`
-			) +
-				` for: ${ chalk.italic( key ) } \n ${ chalk.italic.dim(
-					summary.error.messages[ key ].code_sample
-				) }\n`
-		);
-	} );
-
-	log( chalk.bgYellow( 'Warnings/Info\n' ) );
-	Object.keys( summary.info.messages ).forEach( ( key ) => {
-		log(
-			chalk.underline(
-				`${ summary.info.messages[ key ].message_count } findings`
-			) +
-				` for: ${ chalk.italic( key ) } \n ${ chalk.italic.dim(
-					summary.info.messages[ key ].code_sample
-				) }\n`
-		);
-	} );
-};
+export function isValidURL( string ) {
+	try {
+		new URL( string );
+		return true;
+	} catch ( _ ) {
+		return false;
+	}
+}
 
 /**
- * Formats the W3C validator response into a summary object, that categorizes
- * the data into error or info, and counts how many individual messages there
- * are in each category. Also appends a code sample for each error.
+ * Parses a given value into a boolean or integer.
  *
- * @param {*} data
- * @returns {*} summary
+ * @param 	{any}	value
+ *
+ * @return 	{boolean|number}
  */
-export const generateSummary = ( data ) => {
-	const summary = {
-		info: { type_count: 0, messages: {} },
-		error: { type_count: 0, messages: {} },
-	};
+export function parseBoolOrInt( value ) {
+	if ( isNaN( value ) ) {
+		return value === 'true' || value === '1';
+	}
 
-	data.messages.forEach( ( msg ) => {
-		// Type would typically be 'info' or 'error'
-		if ( ! summary[ msg.type ] ) {
-			summary[ msg.type ] = { type_count: 0, messages: {} };
-		}
-
-		summary[ msg.type ].type_count++;
-
-		// Cumulative for this specific message
-		if ( ! summary[ msg.type ].messages[ msg.message ] ) {
-			summary[ msg.type ].messages[ msg.message ] = {
-				message_count: 0,
-				code_sample: msg.extract,
-			};
-		}
-		summary[ msg.type ].messages[ msg.message ].message_count++;
-	} );
-
-	// Sort summary object by number of messages
-	summary.info.messages = Object.keys( summary.info.messages )
-		.sort(
-			( a, b ) =>
-				summary.info.messages[ b ].message_count -
-				summary.info.messages[ a ].message_count
-		)
-		.reduce(
-			( _sortedObj, key ) => ( {
-				..._sortedObj,
-				[ key ]: summary.info.messages[ key ],
-			} ),
-			{}
-		);
-
-	summary.error.messages = Object.keys( summary.error.messages )
-		.sort(
-			( a, b ) =>
-				summary.error.messages[ b ].message_count -
-				summary.error.messages[ a ].message_count
-		)
-		.reduce(
-			( _sortedObj, key ) => ( {
-				..._sortedObj,
-				[ key ]: summary.error.messages[ key ],
-			} ),
-			{}
-		);
-
-	return summary;
-};
+	value = parseInt( value );
+	return isNaN( value ) ? false : value;
+}
 
 /**
- * Generates the HTML for the WordPress P2 post
+ * Scraps all the a[href] in a given URL.
  *
- * @param {*} summary
- * @param {string} inspectURLs[]
+ * @param 	{string} 	url
+ *
+ * @return 	{Promise<scrapeIt.ScrapeResult<unknown>>}
  */
-export const generateHtmlPost = ( summary, inspectURLs ) => {
-	let htmlData = '';
-
-	htmlData += `<p>The following URLs were inspected:</p>`;
-	htmlData += `<ul class="t51-w3c-urls">`;
-	htmlData += inspectURLs.map( ( item ) => `<li>${ item }</li>` ).join( '' );
-	htmlData += `</ul>`;
-	htmlData += `<p class="t51-w3c-summary">${ summary.error.type_count } errors and ${ summary.info.type_count } info warnings were encountered.</p>`;
-	htmlData += '<h2>Errors</h2>';
-	htmlData += '<details>';
-	htmlData += `<summary class="t51-w3c-errors-summary">View ${ summary.error.type_count } errors</summary>`;
-	htmlData += '<ul class="t51-w3c-errors-list">';
-	Object.keys( summary.error.messages ).forEach( ( key, index ) => {
-		const error_message = summary.error.messages[ key ];
-		htmlData += `<li class="t51-w3c-error-item">
-                        <span class="t51-w3c-error-item-count">${
-							error_message.message_count
-						}</span> findings for:
-                        <span class="t51-w3c-error-item-msg">${ key }</span>
-                        <ul class="t51-w3c-error-item-examples"><li><code style="font-size: 0.75rem;">${ encodeHtmlEntities(
-							error_message.code_sample
-						) }</code></li></ul>
-                    </li>`;
-	} );
-	htmlData += '</ul>';
-	htmlData += '</details>';
-
-	htmlData += '<h2>Warnings/Info</h2>';
-	htmlData += '<details>';
-	htmlData += `<summary class="t51-w3c-warnings-summary">View ${ summary.info.type_count } warnings</summary>`;
-	htmlData += '<ul class="t51-w3c-warnings-list">';
-	Object.keys( summary.info.messages ).forEach( ( key ) => {
-		htmlData += `<li class="t51-w3c-error-item">
-                        <span class="t51-w3c-warning-item-count">${
-							summary.info.messages[ key ].message_count
-						}</span> findings for:
-                        <span class="t51-w3c-warning-item-msg">${ key }</span>
-                        <ul class="t51-w3c-warning-item-examples"><li><code style="font-size: 0.75rem;">${ encodeHtmlEntities(
-							summary.info.messages[ key ].code_sample
-						) }</code></li></ul>
-                    </li>`;
-	} );
-	htmlData += '</ul>';
-	htmlData += '</details>';
-
-	return htmlData;
-};
-
-/**
- * Scraps all the a[href] in a given URL
- * @param {string} url
- * @returns object with an  array of links
- */
-export const scrapLinks = ( url ) => {
-	return scrapeIt( url, {
+export async function scrapLinks( url ) {
+	return await scrapeIt( url, {
 		links: {
 			listItem: 'a',
 			data: {
@@ -174,45 +53,62 @@ export const scrapLinks = ( url ) => {
 			},
 		},
 	} );
-};
+}
 
 /**
- * Returns a list of tags for the P2 post
- * @param {string} url
- * @returns array of strings
+ * Parses the response from the HTML scrapper and returns an array of links.
+ *
+ * @param 	{object}	response
+ *
+ * @return 	{object[]}
  */
-export const tagsForP2Post = ( url ) => {
-	const tag =
-		't51w3c-' +
-		url
-			.toLowerCase()
-			.replace( /^https?\:\/\//i, '' )
-			.replace( 'www.', '' )
-			.replace( /\//g, '-' )
-			.replace( /\./g, '-' )
-			.replace( / /g, '-' )
-			.replace( /[^\w-]+/g, '' )
-			.replace( /-$/, '' );
-	return [ 't51w3c', tag ];
-};
-
-/**
- * Private function
- * Utility function to convert HTML tags in a way WP Editor will output correctly
- * @param {*} string
- * @returns
- */
-const encodeHtmlEntities = ( string ) => {
-	if ( ! string ) {
-		return '';
+export function parseScrapperResponse( response ) {
+	if ( 200 !== response.status ) {
+		throw new Error(
+			`Invalid scrapper response status ${ response.status }.`
+		);
 	}
-	return string
-		.replace( /[\u00A0-\u9999<>\&]/g, ( i ) => {
-			return '&#' + i.charCodeAt( 0 ) + ';';
-		} )
-		.trim()
-		.replace( /\s+/g, ' ' )
-		.replace( /\n/g, '<br />' );
+
+	return response.data.links;
+}
+
+// region LEGACY UNUSED FUNCTIONS
+
+/**
+ * Generates the text version for the Terminal
+ *
+ * @param {*} summary
+ */
+export const formatTerminalOutput = ( summary ) => {
+	console.log(
+		chalk.bold(
+			`There are ${ summary.error.type_count } errors and ${ summary.info.type_count } info warnings\n`
+		)
+	);
+
+	console.log( chalk.bgRed( 'Errors\n' ) );
+	Object.keys( summary.error.messages ).forEach( ( key ) => {
+		console.log(
+			chalk.underline(
+				`${ summary.error.messages[ key ].message_count } findings`
+			) +
+				` for: ${ chalk.italic( key ) } \n ${ chalk.italic.dim(
+					summary.error.messages[ key ].code_sample
+				) }\n`
+		);
+	} );
+
+	console.log( chalk.bgYellow( 'Warnings/Info\n' ) );
+	Object.keys( summary.info.messages ).forEach( ( key ) => {
+		console.log(
+			chalk.underline(
+				`${ summary.info.messages[ key ].message_count } findings`
+			) +
+				` for: ${ chalk.italic( key ) } \n ${ chalk.italic.dim(
+					summary.info.messages[ key ].code_sample
+				) }\n`
+		);
+	} );
 };
 
 /**
@@ -254,3 +150,5 @@ function generateChart( data ) {
 
 	return tempHtmlChart;
 }
+
+// endregion
