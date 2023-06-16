@@ -1,114 +1,97 @@
 import express from 'express';
-import axios from 'axios';
-
-const app = express();
-const log = console.log;
-
 import {
-	generateSummary,
-	tagsForP2Post,
-	generateHtmlPost,
+	isValidURL,
+	parseBoolOrInt,
+	parseScrapperResponse,
 	scrapLinks,
 } from './bin/utils.js';
+import {
+	parseValidatorResponse,
+	callHtmlValidator,
+	compileValidatorSummary,
+} from './bin/w3c-api.js';
+import { generateP2PostHtml, generateP2PostTags } from './bin/p2-post.js';
 
-app.listen( 3000, () => {
-	log( 'Server running on port 3000' );
-} );
+const app = express(),
+	port = 3000;
 
-app.get( '/evaluate', ( req, res, next ) => {
+app.get( '/evaluate', async ( req, res ) => {
 	const url = req.query.url;
-	const output = req.query.output || 'html';
-	const crawl = req.query.crawl || false;
-
-	if ( ! url ) {
-		res.json( 'Provide a URL' );
+	if ( ! url || ! isValidURL( url ) ) {
+		res.json( 'Please provide a valid URL' );
 	}
 
-	//log( `Evaluating ${url}. Crawl: ${crawl}` );
-	( async function () {
-		try {
-			// Scrap given URL to include in inspectURLs
-			let inspectURLs = [ url ];
-			if ( crawl ) {
-				await scrapLinks( url ).then( ( { data, response } ) => {
-					let limit = isNaN( crawl ) ? false : true;
-					if ( response.statusCode === 200 ) {
-						for ( let i = 0; i < data.links.length; i++ ) {
-							const url = data.links[ i ].href.replace(
-								/\/$/,
-								''
-							); // remove trailing slash
-							if ( inspectURLs.includes( url ) ) {
-								continue;
-							}
-							// Verify it's actually a URL
-							if ( url.indexOf( 'http' ) !== 0 ) {
-								// TODO: support relative paths
-								continue;
-							}
-							if (
-								limit &&
-								inspectURLs.length >= parseInt( crawl )
-							) {
-								break;
-							}
+	const format = req.query.format || 'p2html';
+	if ( 'p2html' !== format && 'json' !== format ) {
+		res.json( 'Please provide a valid format' );
+	}
 
-							inspectURLs.push( url );
-						}
-					}
-				} );
+	const crawl = parseBoolOrInt( req.query.crawl || false );
+	if ( typeof crawl === 'number' && 1 >= crawl ) {
+		res.json( 'Please provide a valid crawl value' );
+	}
+
+	console.debug( `Evaluating ${ url }. Crawl: ${ crawl }` );
+
+	try {
+		const validateURLs = [ url ];
+		if ( crawl ) {
+			const scrapperResponse = await scrapLinks( url ),
+				links = parseScrapperResponse( scrapperResponse ),
+				limit = ! isNaN( crawl ) ? crawl : Number.MAX_SAFE_INTEGER;
+
+			for ( let i = 0; i < links.length; i++ ) {
+				const url = links[ i ].href.replace( /\/$/, '' ); // remove trailing slash;
+				if ( validateURLs.includes( url ) || ! isValidURL( url ) ) {
+					// TODO: support relative paths
+					continue;
+				}
+
+				validateURLs.push( url );
+				if ( validateURLs.length >= limit ) {
+					break;
+				}
 			}
-
-			// Remove duplicates
-			inspectURLs = Array.from( new Set( inspectURLs ) );
-
-			log( 'Evaluating these URLs:', inspectURLs );
-
-			// Pull data from w3.org
-			const inspectURLPromises = [];
-			inspectURLs.forEach( ( url ) => {
-				inspectURLPromises.push(
-					axios( {
-						method: 'GET',
-						url: `https://validator.w3.org/nu/?doc=${ url }&out=json`,
-						headers: {
-							'User-Agent':
-								'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2272.101 Safari/537.36',
-							'Content-Type': 'text/html; charset=UTF-8',
-						},
-					} )
-				);
-			} );
-
-			let responses = await axios.all( inspectURLPromises );
-			const data = {
-				messages: responses
-					.map( ( response ) => response.data.messages )
-					.flat(),
-			};
-
-			// Process data to create a summary object
-			const summary = generateSummary( data );
-
-			if ( output === 'json' ) {
-				res.json( summary );
-				return;
-			}
-
-			const postData = {
-				title: `HTML Validator | ${ url } | ${ summary.error.type_count } errors`,
-				tags: tagsForP2Post( url ),
-				content: generateHtmlPost( summary, inspectURLs ),
-			};
-
-			res.json( postData );
-		} catch ( error ) {
-			const postErrData = {
-				title: `HTML Validator | ${ url }`,
-				tags: tagsForP2Post( url ),
-				content: `Oops. Something went wrong: ${ error.message }`,
-			};
-			res.json( postErrData );
 		}
-	} )();
+
+		console.log( 'Validating these URLs:', validateURLs );
+
+		const validatorResponses = await callHtmlValidator( validateURLs ),
+			parsedResponses = validatorResponses
+				.map( ( r ) => parseValidatorResponse( r ) )
+				.flat();
+
+		const summary = compileValidatorSummary( parsedResponses );
+		switch ( format ) {
+			case 'p2html':
+				res.json( {
+					title: `HTML Validator | ${ url } | ${ summary.error.count } errors`,
+					tags: generateP2PostTags( url ),
+					content: generateP2PostHtml( summary, validateURLs ),
+				} );
+				break;
+			case 'json':
+				res.json( summary );
+				break;
+		}
+	} catch ( error ) {
+		console.error( error );
+
+		switch ( format ) {
+			case 'p2html':
+				res.json( {
+					title: `HTML Validator | ${ url }`,
+					tags: generateP2PostTags( url ),
+					content: `Oops. Something went wrong: ${ error.message }`,
+				} );
+				break;
+			case 'json':
+				res.json( error );
+				break;
+		}
+	}
+} );
+
+app.listen( port, () => {
+	console.log( 'Server running on port 3000' );
 } );
