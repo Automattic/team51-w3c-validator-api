@@ -55,9 +55,47 @@ export function parseValidatorResponse( response ) {
 export function compileValidatorSummary( messages ) {
 	// According to the specs, there are only three types: info, error, and non-document-error.
 	const summary = {
-		info: { count: 0, messages: {} },
-		error: { count: 0, messages: {} },
-		'non-document-error': { count: 0, messages: {} },
+		info: {
+			count: 0,
+			warning: {
+				count: 0,
+				messages: {},
+			},
+			other: {
+				count: 0,
+				messages: {},
+			},
+		},
+		error: {
+			count: 0,
+			fatal: {
+				count: 0,
+				messages: {},
+			},
+			other: {
+				count: 0,
+				messages: {},
+			},
+		},
+		'non-document-error': {
+			count: 0,
+			io: {
+				count: 0,
+				messages: {},
+			},
+			schema: {
+				count: 0,
+				messages: {},
+			},
+			internal: {
+				count: 0,
+				messages: {},
+			},
+			other: {
+				count: 0,
+				messages: {},
+			},
+		},
 	};
 
 	messages.forEach( ( message ) => {
@@ -68,17 +106,21 @@ export function compileValidatorSummary( messages ) {
 		summary[ message.type ].count++;
 
 		// Only the `type` key is mandatory, the rest are optional.
+		const type = message.type,
+			subtype = message[ 'subtype' ] || 'other';
+		summary[ type ][ subtype ].count++;
+
 		if ( message[ 'message' ] ) {
-			if ( ! summary[ message.type ].messages[ message.message ] ) {
-				summary[ message.type ].messages[ message.message ] = {
+			if ( ! summary[ type ][ subtype ].messages[ message.message ] ) {
+				summary[ type ][ subtype ].messages[ message.message ] = {
 					count: 0,
 					extracts: [],
 				};
 			}
 
-			summary[ message.type ].messages[ message.message ].count++;
+			summary[ type ][ subtype ].messages[ message.message ].count++;
 			if ( message[ 'extract' ] ) {
-				summary[ message.type ].messages[
+				summary[ type ][ subtype ].messages[
 					message.message
 				].extracts.push( message[ 'extract' ] );
 			}
@@ -86,22 +128,28 @@ export function compileValidatorSummary( messages ) {
 	} );
 
 	// Sort summary object by number of messages.
-	for ( const error_type of Object.keys( summary ) ) {
-		summary[ error_type ].messages = Object.keys(
-			summary[ error_type ].messages
-		)
-			.sort(
-				( a, b ) =>
-					summary[ error_type ].messages[ b ].count -
-					summary[ error_type ].messages[ a ].count
+	for ( const type of Object.keys( summary ) ) {
+		for ( const subtype of Object.keys( summary[ type ] ) ) {
+			if ( ! summary[ type ][ subtype ][ 'messages' ] ) {
+				continue;
+			}
+
+			summary[ type ][ subtype ].messages = Object.keys(
+				summary[ type ][ subtype ].messages
 			)
-			.reduce(
-				( _sortedObj, key ) => ( {
-					..._sortedObj,
-					[ key ]: summary[ error_type ].messages[ key ],
-				} ),
-				{}
-			);
+				.sort(
+					( a, b ) =>
+						summary[ type ][ subtype ].messages[ b ].count -
+						summary[ type ][ subtype ].messages[ a ].count
+				)
+				.reduce(
+					( _sortedObj, key ) => ( {
+						..._sortedObj,
+						[ key ]: summary[ type ][ subtype ].messages[ key ],
+					} ),
+					{}
+				);
+		}
 	}
 
 	return summary;
