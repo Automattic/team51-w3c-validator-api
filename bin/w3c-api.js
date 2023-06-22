@@ -55,9 +55,9 @@ export function parseValidatorResponse( response ) {
 export function compileValidatorSummary( messages ) {
 	// According to the specs, there are only three types: info, error, and non-document-error.
 	const summary = {
-		info: {
+		error: {
 			count: 0,
-			warning: {
+			fatal: {
 				count: 0,
 				messages: {},
 			},
@@ -66,9 +66,9 @@ export function compileValidatorSummary( messages ) {
 				messages: {},
 			},
 		},
-		error: {
+		info: {
 			count: 0,
-			fatal: {
+			warning: {
 				count: 0,
 				messages: {},
 			},
