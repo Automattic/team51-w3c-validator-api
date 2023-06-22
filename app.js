@@ -66,7 +66,7 @@ app.get( '/evaluate', async ( req, res ) => {
 			case 'p2html':
 				res.json( {
 					title: `HTML Validator | ${ url } | ${ summary.error.count } errors`,
-					tags: generateP2PostTags( url ),
+					tags: generateP2PostTags( url, summary ),
 					content: generateP2PostHtml( summary, validateURLs ),
 				} );
 				break;
