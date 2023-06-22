@@ -90,7 +90,7 @@ const encodeHtmlEntities = ( string ) => {
 		return '';
 	}
 	return string
-		.replace( /[\u00A0-\u9999<>\&]/g, ( i ) => {
+		.replace( /[\u00A0-\u9999<>&]/g, ( i ) => {
 			return '&#' + i.charCodeAt( 0 ) + ';';
 		} )
 		.trim()
