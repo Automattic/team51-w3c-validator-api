@@ -21,7 +21,7 @@ app.get( '/evaluate', async ( req, res ) => {
 		res.json( 'Please provide a valid URL' );
 	}
 
-	const format = req.query.format || 'p2html';
+	const format = req.query.format || req.query.output || 'p2html';
 	if ( 'p2html' !== format && 'json' !== format ) {
 		res.json( 'Please provide a valid format' );
 	}
