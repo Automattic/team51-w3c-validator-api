@@ -41,13 +41,13 @@ app.get( '/evaluate', async ( req, res ) => {
 				limit = ! isNaN( crawl ) ? crawl : Number.MAX_SAFE_INTEGER;
 
 			for ( let i = 0; i < links.length; i++ ) {
-				const url = links[ i ].href.replace( /\/$/, '' ); // remove trailing slash;
-				if ( validateURLs.includes( url ) || ! isValidURL( url ) ) {
+				const link = links[ i ].href.replace( /\/$/, '' ); // remove trailing slash;
+				if ( validateURLs.includes( link ) || ! isValidURL( link ) ) {
 					// TODO: support relative paths
 					continue;
 				}
 
-				validateURLs.push( url );
+				validateURLs.push( link );
 				if ( validateURLs.length >= limit ) {
 					break;
 				}
