@@ -26,7 +26,7 @@
 		"scrape-it": "^6.0.1"
 	},
 	"devDependencies": {
-		"@wordpress/scripts": "^26.6.0"
+		"@wordpress/scripts": "^26.8.0"
 	},
 	"scripts": {
 		"start": "node app.js",
