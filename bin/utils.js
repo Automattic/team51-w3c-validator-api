@@ -28,7 +28,7 @@ export function isValidURL( string ) {
  */
 export function parseBoolOrInt( value ) {
 	if ( isNaN( value ) ) {
-		return value === 'true' || value === '1';
+		return value === 'true';
 	}
 
 	value = parseInt( value );

@@ -11,6 +11,7 @@ export async function callHtmlValidator( URLs ) {
 	URLs = Array.isArray( URLs ) ? URLs : [ URLs ]; // Convert to array.
 	URLs = Array.from( new Set( URLs ) ); // Remove duplicates.
 
+	// TODO: If the number of URLs is high, we can end up with 429 responses. We need a way to throttle the requests.
 	return axios.all(
 		URLs.map( ( URL ) => {
 			return axios( {

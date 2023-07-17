@@ -19,16 +19,19 @@ app.get( '/evaluate', async ( req, res ) => {
 	const url = req.query.url;
 	if ( ! url || ! isValidURL( url ) ) {
 		res.json( 'Please provide a valid URL' );
+		return;
 	}
 
 	const format = req.query.format || req.query.output || 'p2html';
 	if ( 'p2html' !== format && 'json' !== format ) {
 		res.json( 'Please provide a valid format' );
+		return;
 	}
 
 	const crawl = parseBoolOrInt( req.query.crawl || false );
-	if ( typeof crawl === 'number' && 1 >= crawl ) {
+	if ( typeof crawl === 'number' && 1 > crawl ) {
 		res.json( 'Please provide a valid crawl value' );
+		return;
 	}
 
 	console.debug( `Evaluating ${ url }. Crawl: ${ crawl }` );
