@@ -145,7 +145,7 @@ export function generateP2PostHtml( summary, validatedURLs ) {
 		}
 	}
 
-	return htmlData;
+	return htmlData.replace( /(\r\n|\n|\r|\t)/gm, '' );
 }
 
 /**
