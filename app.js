@@ -78,7 +78,10 @@ app.get('/evaluate', async (req, res) => {
 				});
 				break;
 			case 'json':
-				res.json(summary);
+				res.json({
+					validatedURLs: validateURLs,
+					...summary,
+				});
 				break;
 		}
 	} catch (error) {
