@@ -6,14 +6,17 @@ import scrapeIt from 'scrape-it';
  *
  * @link	https://stackoverflow.com/a/55585593
  *
- * @param 	{string}	string	string to check
+ * @param 	{string}	string		string to check
+ * @param	{string}	hostname	optional hostname to check against
  *
  * @return 	{boolean}
  */
-export function isValidURL(string) {
+export function isValidURL(string, hostname = undefined) {
 	try {
-		new URL(string);
-		return true;
+		const url = new URL(string);
+		hostname = hostname || url.hostname;
+
+		return hostname === url.hostname;
 	} catch (_) {
 		return false;
 	}

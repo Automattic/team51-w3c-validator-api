@@ -16,7 +16,7 @@ const app = express(),
 	port = 3000;
 
 app.get('/evaluate', async (req, res) => {
-	const url = req.query.url;
+	const url = req.query.url.replace(/\/$/, '');
 	if (!url || !isValidURL(url)) {
 		res.json('Please provide a valid URL');
 		return;
@@ -41,11 +41,15 @@ app.get('/evaluate', async (req, res) => {
 		if (crawl) {
 			const scrapperResponse = await scrapLinks(url),
 				links = parseScrapperResponse(scrapperResponse),
-				limit = !isNaN(crawl) ? crawl : Number.MAX_SAFE_INTEGER;
+				limit = !isNaN(crawl) ? crawl : Number.MAX_SAFE_INTEGER,
+				hostname = new URL(url).hostname;
 
 			for (let i = 0; i < links.length; i++) {
-				const link = links[i].href.replace(/\/$/, ''); // remove trailing slash;
-				if (validateURLs.includes(link) || !isValidURL(link)) {
+				const link = links[i].href.replace(/\/$/, ''); // Remove trailing slash.
+				if (
+					validateURLs.includes(link) ||
+					!isValidURL(link, hostname)
+				) {
 					// TODO: support relative paths
 					continue;
 				}
