@@ -15,86 +15,86 @@ import { generateP2PostHtml, generateP2PostTags } from './bin/p2-post.js';
 const app = express(),
 	port = 3000;
 
-app.get( '/evaluate', async ( req, res ) => {
+app.get('/evaluate', async (req, res) => {
 	const url = req.query.url;
-	if ( ! url || ! isValidURL( url ) ) {
-		res.json( 'Please provide a valid URL' );
+	if (!url || !isValidURL(url)) {
+		res.json('Please provide a valid URL');
 		return;
 	}
 
 	const format = req.query.format || req.query.output || 'p2html';
-	if ( 'p2html' !== format && 'json' !== format ) {
-		res.json( 'Please provide a valid format' );
+	if ('p2html' !== format && 'json' !== format) {
+		res.json('Please provide a valid format');
 		return;
 	}
 
-	const crawl = parseBoolOrInt( req.query.crawl || false );
-	if ( typeof crawl === 'number' && 1 > crawl ) {
-		res.json( 'Please provide a valid crawl value' );
+	const crawl = parseBoolOrInt(req.query.crawl || false);
+	if (typeof crawl === 'number' && 1 > crawl) {
+		res.json('Please provide a valid crawl value');
 		return;
 	}
 
-	console.debug( `Evaluating ${ url }. Crawl: ${ crawl }` );
+	console.debug(`Evaluating ${url}. Crawl: ${crawl}`);
 
 	try {
-		const validateURLs = [ url ];
-		if ( crawl ) {
-			const scrapperResponse = await scrapLinks( url ),
-				links = parseScrapperResponse( scrapperResponse ),
-				limit = ! isNaN( crawl ) ? crawl : Number.MAX_SAFE_INTEGER;
+		const validateURLs = [url];
+		if (crawl) {
+			const scrapperResponse = await scrapLinks(url),
+				links = parseScrapperResponse(scrapperResponse),
+				limit = !isNaN(crawl) ? crawl : Number.MAX_SAFE_INTEGER;
 
-			for ( let i = 0; i < links.length; i++ ) {
-				const link = links[ i ].href.replace( /\/$/, '' ); // remove trailing slash;
-				if ( validateURLs.includes( link ) || ! isValidURL( link ) ) {
+			for (let i = 0; i < links.length; i++) {
+				const link = links[i].href.replace(/\/$/, ''); // remove trailing slash;
+				if (validateURLs.includes(link) || !isValidURL(link)) {
 					// TODO: support relative paths
 					continue;
 				}
 
-				validateURLs.push( link );
-				if ( validateURLs.length >= limit ) {
+				validateURLs.push(link);
+				if (validateURLs.length >= limit) {
 					break;
 				}
 			}
 		}
 
-		console.log( 'Validating these URLs:', validateURLs );
+		console.log('Validating these URLs:', validateURLs);
 
-		const validatorResponses = await callHtmlValidator( validateURLs ),
+		const validatorResponses = await callHtmlValidator(validateURLs),
 			parsedResponses = validatorResponses
-				.map( ( r ) => parseValidatorResponse( r ) )
+				.map((r) => parseValidatorResponse(r))
 				.flat();
 
-		const summary = compileValidatorSummary( parsedResponses );
-		switch ( format ) {
+		const summary = compileValidatorSummary(parsedResponses);
+		switch (format) {
 			case 'p2html':
-				res.json( {
-					title: `HTML Validator | ${ url } | ${ summary.error.count } errors`,
-					tags: generateP2PostTags( url, summary ),
-					content: generateP2PostHtml( summary, validateURLs ),
-				} );
+				res.json({
+					title: `HTML Validator | ${url} | ${summary.error.count} errors`,
+					tags: generateP2PostTags(url, summary),
+					content: generateP2PostHtml(summary, validateURLs),
+				});
 				break;
 			case 'json':
-				res.json( summary );
+				res.json(summary);
 				break;
 		}
-	} catch ( error ) {
-		console.error( error );
+	} catch (error) {
+		console.error(error);
 
-		switch ( format ) {
+		switch (format) {
 			case 'p2html':
-				res.json( {
-					title: `HTML Validator | ${ url }`,
-					tags: generateP2PostTags( url ),
-					content: `Oops. Something went wrong: ${ error.message }`,
-				} );
+				res.json({
+					title: `HTML Validator | ${url}`,
+					tags: generateP2PostTags(url),
+					content: `Oops. Something went wrong: ${error.message}`,
+				});
 				break;
 			case 'json':
-				res.json( error );
+				res.json(error);
 				break;
 		}
 	}
-} );
+});
 
-app.listen( port, () => {
-	console.log( 'Server running on port 3000' );
-} );
+app.listen(port, () => {
+	console.log('Server running on port 3000');
+});

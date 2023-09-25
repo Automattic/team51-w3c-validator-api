@@ -1,4 +1,5 @@
 import axios from 'axios';
+import axiosThrottle from 'axios-request-throttle';
 
 /**
  * Validate one or more URLs using the W3C API.
@@ -7,23 +8,25 @@ import axios from 'axios';
  *
  * @return 	{Promise<object[]>}
  */
-export async function callHtmlValidator( URLs ) {
-	URLs = Array.isArray( URLs ) ? URLs : [ URLs ]; // Convert to array.
-	URLs = Array.from( new Set( URLs ) ); // Remove duplicates.
+export async function callHtmlValidator(URLs) {
+	URLs = Array.isArray(URLs) ? URLs : [URLs]; // Convert to array.
+	URLs = Array.from(new Set(URLs)); // Remove duplicates.
 
-	// TODO: If the number of URLs is high, we can end up with 429 responses. We need a way to throttle the requests.
+	// Limit to 1 request per second to avoid rate limiting, i.e. 429 errors.
+	axiosThrottle.use(axios, { requestsPerSecond: 1 });
+
 	return axios.all(
-		URLs.map( ( URL ) => {
-			return axios( {
+		URLs.map((URL) => {
+			return axios({
 				method: 'GET',
-				url: `https://validator.w3.org/nu/?doc=${ URL }&out=json`,
+				url: `https://validator.w3.org/nu/?doc=${URL}&out=json`,
 				headers: {
 					'User-Agent':
 						'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2272.101 Safari/537.36',
 					'Content-Type': 'text/html; charset=UTF-8',
 				},
-			} );
-		} )
+			});
+		})
 	);
 }
 
@@ -34,9 +37,9 @@ export async function callHtmlValidator( URLs ) {
  *
  * @return 	{object[]}
  */
-export function parseValidatorResponse( response ) {
-	if ( 200 !== response.status ) {
-		throw new Error( `Invalid W3C response status ${ response.status }.` );
+export function parseValidatorResponse(response) {
+	if (200 !== response.status) {
+		throw new Error(`Invalid W3C response status ${response.status}.`);
 	}
 
 	return response.data.messages;
@@ -53,7 +56,7 @@ export function parseValidatorResponse( response ) {
  *
  * @return 	{object}
  */
-export function compileValidatorSummary( messages ) {
+export function compileValidatorSummary(messages) {
 	// According to the specs, there are only three types: info, error, and non-document-error.
 	const summary = {
 		error: {
@@ -99,55 +102,55 @@ export function compileValidatorSummary( messages ) {
 		},
 	};
 
-	messages.forEach( ( message ) => {
-		if ( ! summary[ message.type ] ) {
-			throw new Error( `Unknown W3C message type: ${ message.type }` );
+	messages.forEach((message) => {
+		if (!summary[message.type]) {
+			throw new Error(`Unknown W3C message type: ${message.type}`);
 		}
 
-		summary[ message.type ].count++;
+		summary[message.type].count++;
 
 		// Only the `type` key is mandatory, the rest are optional.
 		const type = message.type,
-			subtype = message[ 'subtype' ] || 'other';
-		summary[ type ][ subtype ].count++;
+			subtype = message['subtype'] || 'other';
+		summary[type][subtype].count++;
 
-		if ( message[ 'message' ] ) {
-			if ( ! summary[ type ][ subtype ].messages[ message.message ] ) {
-				summary[ type ][ subtype ].messages[ message.message ] = {
+		if (message['message']) {
+			if (!summary[type][subtype].messages[message.message]) {
+				summary[type][subtype].messages[message.message] = {
 					count: 0,
 					extracts: [],
 				};
 			}
 
-			summary[ type ][ subtype ].messages[ message.message ].count++;
-			if ( message[ 'extract' ] ) {
-				summary[ type ][ subtype ].messages[
-					message.message
-				].extracts.push( message[ 'extract' ] );
+			summary[type][subtype].messages[message.message].count++;
+			if (message['extract']) {
+				summary[type][subtype].messages[message.message].extracts.push(
+					message['extract']
+				);
 			}
 		}
-	} );
+	});
 
 	// Sort summary object by number of messages.
-	for ( const type of Object.keys( summary ) ) {
-		for ( const subtype of Object.keys( summary[ type ] ) ) {
-			if ( ! summary[ type ][ subtype ][ 'messages' ] ) {
+	for (const type of Object.keys(summary)) {
+		for (const subtype of Object.keys(summary[type])) {
+			if (!summary[type][subtype]['messages']) {
 				continue;
 			}
 
-			summary[ type ][ subtype ].messages = Object.keys(
-				summary[ type ][ subtype ].messages
+			summary[type][subtype].messages = Object.keys(
+				summary[type][subtype].messages
 			)
 				.sort(
-					( a, b ) =>
-						summary[ type ][ subtype ].messages[ b ].count -
-						summary[ type ][ subtype ].messages[ a ].count
+					(a, b) =>
+						summary[type][subtype].messages[b].count -
+						summary[type][subtype].messages[a].count
 				)
 				.reduce(
-					( _sortedObj, key ) => ( {
+					(_sortedObj, key) => ({
 						..._sortedObj,
-						[ key ]: summary[ type ][ subtype ].messages[ key ],
-					} ),
+						[key]: summary[type][subtype].messages[key],
+					}),
 					{}
 				);
 		}
